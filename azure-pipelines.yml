@@ -3,27 +3,46 @@ trigger:
 
 pool:
   vmImage: 'Ubuntu-16.04'
-
 steps:
 - task: NodeTool@0
   inputs:
     versionSpec: '8.x'
   displayName: 'Install Node.js'
-
+- task: SonarCloudPrepare@1
+  enabled: true
+  displayName: 'Prepare analysis on SonarQube'
+  inputs:
+    SonarCloud: 'Sonar Cloud (Propio)'
+    organization: 'victormcl'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: 'express-nodejs'
+    cliProjectName: 'Express (nodejs)'
+    cliProjectVersion: $(Build.BuildId)
+    cliSources: '.'
+    extraProperties: |
+      sonar.branch.name=$(Build.SourceBranchName)
 - script: |
     npm install
   displayName: 'npm install'
-
 - script: |
     npm test
   displayName: 'npm test'
-
+- task: SonarCloudAnalyze@1
+  enabled: true
+  displayName: 'Run scan SonarQube'
+- task: SonarCloudPublish@1
+  enabled: true
+  inputs:
+    pollingTimeoutSec: '30'
+- task: sonarcloud-buildbreaker@2
+  inputs:
+    SonarCloud: 'Sonar Cloud (Propio)'
+    organization: 'victormcl'
 - task: ArchiveFiles@2
   displayName: 'Archive files'
   inputs:
     rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
     includeRootFolder: false
-
 - task: PublishBuildArtifacts@1
   displayName: 'Publish artifacts: drop'
-  
